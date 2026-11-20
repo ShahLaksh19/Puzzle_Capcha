@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PuzzlePass — Privacy-First Adaptive Visual CAPTCHA</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ==========================================
+       HERO COVER / LANDING PAGE
+       ========================================== -->
+  <section id="coverPage" class="cover-overlay" aria-label="PuzzlePass Introduction">
+    <div class="cover-container">
+      <div class="cover-badge">
+        <span class="pulse-dot"></span> NEXT-GEN BOT DEFENSE
+      </div>
+
+      <h1 class="cover-title">
+        PUZZLE<span class="gradient-text">PASS</span>
+      </h1>
+      <p class="cover-tagline">
+        Privacy-First Adaptive Visual CAPTCHA System
+      </p>
+
+      <p class="cover-description">
+        Replacing frustrating tracking puzzles and unreadable distorted text with an intuitive,
+        privacy-first visual verification experience. Processed 100% in-browser on client canvas —
+        zero personal photos or facial data ever touch a remote server.
+      </p>
+
+      <!-- Three Key Architectural Pillars -->
+      <div class="cover-features-grid">
+        <div class="cover-feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3>Zero Data Leakage</h3>
+          <p>Images are sliced and manipulated in-memory via HTML5 Canvas. No facial data or raw images are uploaded.</p>
+        </div>
+        <div class="cover-feature-card">
+          <div class="feature-icon">🧩</div>
+          <h3>Human-Intuitive Puzzle</h3>
+          <p>Solve cleanly in 5–7 seconds using mouse drag, click-to-swap, mobile touch, or hands-free computer vision gestures.</p>
+        </div>
+        <div class="cover-feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Cryptographic Security</h3>
+          <p>FastAPI/Python backend issues signed HMAC-SHA256 challenges with replay defense and one-time verification tokens.</p>
+        </div>
+      </div>
+
+      <!-- Quick Launch CTA Bar -->
+      <div class="cover-cta-row">
+        <button type="button" id="enterDemoBtn" class="cover-primary-btn">
+          🚀 Launch Interactive Demo
+        </button>
+        <button type="button" id="quickSampleBtn" class="cover-secondary-btn">
+          🎨 Try Sample Puzzle
+        </button>
+      </div>
+
+      <!-- Quick Demo Presets -->
+      <div class="cover-presets-bar">
+        <span class="preset-label">Quick Presets:</span>
+        <button type="button" class="preset-chip" data-preset="sunset">🌄 Mountain Sunset</button>
+        <button type="button" class="preset-chip" data-preset="cyber">🏙️ Cyberpunk City</button>
+        <button type="button" class="preset-chip" data-preset="mandala">☸️ Mandala</button>
+        <button type="button" class="preset-chip" data-preset="space">🌌 Deep Space</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       MAIN INTERACTIVE STAGE
+       ========================================== -->
+  <main id="stage" role="main" aria-label="PuzzlePass Verification Stage">
+    <video id="webcam" playsinline autoplay muted aria-hidden="true"></video>
+    <canvas id="sceneCanvas" tabindex="0" aria-label="Interactive CAPTCHA Puzzle Canvas"></canvas>
+
+    <!-- Top Navigation HUD -->
+    <header class="hud-top">
+      <div class="brand">
+        <button type="button" id="openCoverBtn" class="brand-btn" title="View Project Overview & Architecture">
+          PUZZLE<span class="brand-accent">PASS</span> <small>visual captcha</small> ℹ️
+        </button>
+      </div>
+
+      <div class="source-selector" role="toolbar" aria-label="Image Source Selection">
+        <button type="button" id="srcSampleBtn" class="source-tab active" title="Choose from curated presets with memorization preview">
+          🎨 Samples
+        </button>
+        <button type="button" id="srcUploadBtn" class="source-tab" title="Upload a personal photo (processed 100% locally in browser)">
+          📁 Upload Image
+        </button>
+        <button type="button" id="srcCameraBtn" class="source-tab" title="Use live camera feed or gesture capture">
+          📷 Camera
+        </button>
+        <button type="button" id="srcAccessibleBtn" class="source-tab" title="Accessible alternative challenge">
+          ♿ Audio / Math
+        </button>
+      </div>
+
+      <div class="status-pill">
+        <span id="statusDot" class="status-dot"></span>
+        <span id="statusText">Ready — select a preset to start</span>
+      </div>
+    </header>
+
+    <!-- Hidden File Input for Privacy-First Local Upload -->
+    <input type="file" id="imageFileInput" accept="image/*" style="display:none;" aria-hidden="true" />
+
+    <!-- Samples Dropdown Menu -->
+    <div id="samplePicker" class="sample-picker hidden" role="menu" aria-label="Sample Image Presets">
+      <div class="sample-picker-title">Select Sample Preset</div>
+      <div class="sample-grid">
+        <button type="button" class="sample-card" data-preset="sunset">
+          <span class="sample-icon">🌄</span>
+          <span class="sample-name">Mountain Sunset</span>
+        </button>
+        <button type="button" class="sample-card" data-preset="cyber">
+          <span class="sample-icon">🏙️</span>
+          <span class="sample-name">Cyberpunk City</span>
+        </button>
+        <button type="button" class="sample-card" data-preset="mandala">
+          <span class="sample-icon">☸️</span>
+          <span class="sample-name">Mandala Geometry</span>
+        </button>
+        <button type="button" class="sample-card" data-preset="space">
+          <span class="sample-icon">🌌</span>
+          <span class="sample-name">Cosmic Nebula</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Camera Action Bar -->
+    <div id="cameraActionBar" class="camera-action-bar hidden">
+      <button type="button" id="snapPhotoBtn" class="action-btn action-btn--primary">
+        📸 Instant Snapshot
+      </button>
+      <span class="action-hint">or frame with both hands &amp; pinch</span>
+    </div>
+
+    <!-- Telemetry Badges (Progress, TTL Expiration, Move Count, Peek Target) -->
+    <div class="telemetry-bar">
+      <div id="progressBadge" class="hud-badge hidden">
+        <span id="progressText">0 / 9 pieces placed</span>
+      </div>
+      <div id="ttlBadge" class="hud-badge ttl-badge hidden">
+        <span>⏱️ <span id="ttlText">120s</span></span>
+      </div>
+      <div id="movesBadge" class="hud-badge moves-badge hidden">
+        <span>Moves: <span id="movesText">0</span></span>
+      </div>
+      <button type="button" id="peekBtn" class="hud-badge peek-btn hidden" title="Hover or click to peek at original target image">
+        👁️ Peek Original
+      </button>
+    </div>
+
+    <!-- Floating Peek Image Reference Card -->
+    <div id="peekCard" class="peek-card hidden">
+      <div class="peek-card-header">Target Reference</div>
+      <canvas id="peekCanvas"></canvas>
+    </div>
+
+    <!-- ==========================================
+         MEMORIZE IMAGE PREVIEW BANNER
+         ========================================== -->
+    <div id="previewOverlay" class="preview-overlay hidden">
+      <div class="preview-badge">
+        <span class="preview-icon">🧠</span>
+        <div class="preview-text-block">
+          <div class="preview-title">Memorize the Target Image</div>
+          <div class="preview-sub">Scrambling into puzzle pieces in <strong id="previewSeconds">3</strong>s…</div>
+        </div>
+        <button type="button" id="skipPreviewBtn" class="preview-skip-btn">
+          Start Now ⚡
+        </button>
+      </div>
+    </div>
+
+    <!-- Interaction Controls & Accessibility Guide -->
+    <div class="hud-bottom">
+      <div class="controls-guide">
+        <span class="guide-tag">Controls</span>
+        <span>🖱️ Drag or Click-to-Swap</span>
+        <span>📱 Touch Drag</span>
+        <span>⌨️ Arrow Keys + Space to Swap</span>
+        <span>✋ Pinch Gesture</span>
+      </div>
+      <button type="button" id="reshuffleBtn" class="hud-link-btn hidden">
+        🔄 New Challenge
+      </button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden">
+      <div class="loader-text" id="loaderText">loading HandLandmarker model…</div>
+      <div class="loader-bar"></div>
+      <button type="button" id="loaderRetry" class="loader-retry hidden">retry</button>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="errorBanner" role="alert"></div>
+
+    <!-- Accessible Alternative Modal -->
+    <div id="accessibleModal" class="modal-overlay hidden" role="dialog" aria-labelledby="accessibleModalTitle" aria-modal="true">
+      <div class="modal-card">
+        <h3 id="accessibleModalTitle">♿ Accessible Alternative Verification</h3>
+        <p class="modal-desc">
+          For users using screen readers or who prefer a non-visual challenge:
+        </p>
+        <div id="accessibleQuestion" class="accessible-question">Loading challenge…</div>
+        <div class="accessible-input-row">
+          <input type="text" id="accessibleAnswerInput" placeholder="Your answer" autocomplete="off" />
+          <button type="button" id="accessibleVerifyBtn" class="action-btn action-btn--primary">Verify</button>
+        </div>
+        <div id="accessibleStatus" class="accessible-status"></div>
+        <button type="button" id="accessibleCloseBtn" class="modal-close-btn">Cancel &amp; Return to Visual Puzzle</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==========================================
+       SIDEBAR: VERIFICATION DEMO & PHOTO STRIP
+       ========================================== -->
+  <aside id="gallery" aria-label="Verification Panel & History">
+
+    <!-- Sidebar View Mode Switcher -->
+    <div class="sidebar-tabs">
+      <button type="button" id="tabCaptchaBtn" class="sidebar-tab active">🛡️ Security Demo</button>
+      <button type="button" id="tabStripBtn" class="sidebar-tab">📸 Photo Strip</button>
+    </div>
+
+    <!-- Section 1: CAPTCHA Verification Demo -->
+    <div id="captchaDemoSection" class="sidebar-section">
+      <div class="panel-card">
+        <div class="panel-card-title">Verification Status</div>
+        <div id="verificationStatusPill" class="verification-status-pill unverified">
+          <span class="status-icon">⏳</span>
+          <span id="verificationStatusLabel">Solve Puzzle to Verify</span>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-card-title-row">
+          <div class="panel-card-title">One-Time Token (HMAC)</div>
+          <button type="button" id="copyTokenBtn" class="copy-token-btn" title="Copy Token">📋 Copy</button>
+        </div>
+        <textarea id="tokenDisplay" class="token-display" readonly placeholder="Token will be generated upon puzzle completion…"></textarea>
+      </div>
+
+      <div class="panel-card form-demo-card">
+        <div class="panel-card-title">Protected Action Demo</div>
+        <p class="panel-card-sub">Simulate submitting a form protected by PuzzlePass:</p>
+        <input type="text" id="demoUsername" class="demo-input" placeholder="User / Account name" value="alex_demo" />
+        <button type="button" id="submitProtectedFormBtn" class="gallery-action-btn gallery-action-btn--primary" disabled>
+          Submit Protected Action
+        </button>
+        <div id="submissionResult" class="submission-result hidden"></div>
+      </div>
+
+      <div class="security-meta-list">
+        <div class="meta-item"><span class="meta-label">Privacy:</span> Client-side canvas</div>
+        <div class="meta-item"><span class="meta-label">Backend:</span> FastAPI / Python</div>
+        <div class="meta-item"><span class="meta-label">Replay Defense:</span> One-time nonce</div>
+      </div>
+    </div>
+
+    <!-- Section 2: Completed Photo Strip (Original Feature Preserved) -->
+    <div id="stripSection" class="sidebar-section hidden">
+      <div class="gallery-head">
+        <span class="gallery-title">Solved Strip</span>
+        <span class="gallery-count" id="galleryCount">0 / 3</span>
+      </div>
+
+      <div class="strip-complete-msg" id="stripCompleteMsg">
+        strip complete — download or reset to continue
+      </div>
+
+      <div id="galleryStrip" class="gallery-strip">
+        <div class="gallery-empty" id="galleryEmpty">
+          Your completed puzzles<br/>will appear here.
+        </div>
+      </div>
+
+      <div class="gallery-actions">
+        <button type="button" id="downloadStripBtn" class="gallery-action-btn" disabled>download strip</button>
+        <button type="button" id="resetAllBtn" class="gallery-action-btn gallery-action-btn--danger">reset all</button>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
